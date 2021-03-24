@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+
+    <style>
+        .sudoku,
+        .resolved {
+            border: 2px solid black;
+            height: 450px;
+            width: 450px
+        }
+
+        .row {
+            height: 50px;
+            width: 100%;
+            display: flex;
+        }
+
+        .row:nth-child(3n) {
+            border-bottom: 2px solid black;
+        }
+
+        .col {
+            height: 50px;
+            width: 50px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            border: 1px solid black;
+        }
+
+        .col:nth-child(3n) {
+            border-right: 2px solid black;
+        }
+
+        .col:last-child {
+            border: 1px solid black;
+        }
+
+        .row:last-child {
+            border: none;
+        }
+
+        button {
+            margin-top: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 1100px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sudoku">
+        </div>
+        <div class="resolved">
+        </div>
+    </div>
+
+    <button class="button">Solve</button>
+</body>
+
+<script>
+    const sudoku = [
+        [' ', '9', ' ', ' ', '4', '2', '1', '3', '6'],
+        [' ', ' ', ' ', '9', '6', ' ', '4', '8', '5'],
+        [' ', ' ', ' ', '5', '8', '1', ' ', ' ', ' '],
+        [' ', ' ', '4', ' ', ' ', ' ', ' ', ' ', ' '],
+        ['5', '1', '7', '2', ' ', ' ', '9', ' ', ' '],
+        ['6', ' ', '2', ' ', ' ', ' ', '3', '7', ' '],
+        ['1', ' ', ' ', '8', ' ', '4', ' ', '2', ' '],
+        ['7', ' ', '6', ' ', ' ', ' ', '8', '1', ' '],
+        ['3', ' ', ' ', ' ', '9', ' ', ' ', ' ', ' '],
+    ]
+
+    const possibleNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    const checkRow = (row, value) => {
+        return row.includes(value)
+    }
+
+    const checkColumn = (sudoku, column, value) => {
+        const col = sudoku.map((col) => col[column]);
+        return col.includes(value);
+    }
+
+    const checkSquare = (sudoku, position, value) => {
+        const allSquare = [];
+        const squareOriginRowCoord = Math.floor(position.row / 3) * 3;
+        const squareOriginColCoord = Math.floor(position.col / 3) * 3;
+
+        for (let i = squareOriginRowCoord; i < squareOriginRowCoord + 3; i++) {
+            for (let j = squareOriginColCoord; j < squareOriginColCoord + 3; j++) {
+                allSquare.push(sudoku[i][j])
+            }
+        }
+        return allSquare.includes(value);
+    };
+
+    const isValid = (sudoku, position, value) => {
+        const isPossibleInRow = checkRow(sudoku[position.row], value);
+        const isPossibleInColumn = checkColumn(sudoku, position.col, value);
+        const isPossibleInSquare = checkSquare(sudoku, position, value);
+
+        return (!isPossibleInRow && !isPossibleInColumn && !isPossibleInSquare)
+    }
+
+    const findEmpty = (sudoku) => {
+        for (let i = 0; i < sudoku.length; i++) {
+            for (let j = 0; j < sudoku[i].length; j++) {
+                if (sudoku[i][j] === ' ') {
+                    return { row: i, col: j }
+                }
+            }
+        }
+    }
+    const solve = (sudoku, callback) => {
+        const emptyElement = findEmpty(sudoku);
+
+        if (!emptyElement) {
+            callback(sudoku)
+            return sudoku;
+        }
+
+        possibleNumbers.forEach((num) => {
+            const valid = isValid(sudoku, emptyElement, num);
+            if (valid) {
+                sudoku[emptyElement.row][emptyElement.col] = num;
+                const solved = solve(sudoku, callback);
+                if (solved) return solved;
+            }
+
+            if (!valid) {
+                sudoku[emptyElement.row][emptyElement.col] = ' ';
+            }
+        })
+    }
+
+    const visualise = (sudoku, element) => {
+        const sudokuTable = document.querySelector(element);
+
+        sudoku.forEach((row) => {
+            const domRow = document.createElement('div');
+            domRow.className = 'row';
+            row.forEach((column) => {
+                const domCol = document.createElement('div');
+                domCol.className = 'col';
+                domCol.innerText = column;
+                domRow.appendChild(domCol);
+            })
+            sudokuTable.appendChild(domRow);
+        })
+    }
+
+
+    const button = document.querySelector('.button');
+    button.addEventListener('click', () => {
+        const date = Date.now();
+        solve(sudoku, (sudoku) => {
+            visualise(sudoku, '.resolved');
+            console.log(Date.now() - date)
+        })
+    })
+
+    visualise(sudoku, '.sudoku')
+</script>
+
+</html>
